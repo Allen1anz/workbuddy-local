@@ -1,0 +1,31 @@
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs/promises");
+const path = require("node:path");
+const os = require("node:os");
+const { createDispatcher } = require("./dispatcher.cjs");
+
+test("agent preferences survive reopening and failed saves preserve committed values", async () => {
+  const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), "wb-product-settings-"));
+  const options = { origin: "http://127.0.0.1:18723", dataDir };
+  const events = [];
+  const dispatch = createDispatcher({ ...options, emit: (...args) => events.push(args) });
+  await dispatch("config:set", ["disableAgentTeams", true]);
+  await dispatch("config:set", ["disableLocalSkillsMemory", false]);
+  await dispatch("window:saveLocale", [{ locale: "en-US" }]);
+  const reopened = createDispatcher(options);
+  assert.equal(await reopened("config:get", ["disableAgentTeams"]), true);
+  assert.equal(await reopened("config:get", ["disableLocalSkillsMemory"]), false);
+  assert.equal(await reopened("config:get", ["locale"]), "en-US");
+  await assert.rejects(reopened("window:saveLocale", [{ locale: "invalid" }]));
+  assert.equal(await reopened("config:get", ["locale"]), "en-US");
+  const configFile = path.join(dataDir, "desktop-settings.json");
+  await fs.rename(configFile, configFile + ".saved");
+  await fs.mkdir(configFile);
+  const eventCount = events.length;
+  await assert.rejects(dispatch("config:set", ["disableAgentTeams", false]));
+  await assert.rejects(dispatch("config:set", ["newPreference", true]));
+  assert.equal(await dispatch("config:get", ["disableAgentTeams"]), true);
+  assert.equal(await dispatch("config:get", ["newPreference"]), null);
+  assert.equal(events.length, eventCount);
+});

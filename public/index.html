@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>工作伙伴 · 本地工作台</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-icon">✳</span>
+        <div>工作伙伴<small>LOCAL WORKSPACE</small></div>
+      </div>
+      <button id="new-chat" class="primary">＋ 新建对话</button>
+      <nav>
+        <button data-page="chat" class="active">◈ 对话工作台</button
+        ><button data-page="experts">♧ 专家与技能</button
+        ><button data-page="memories">◇ 长期记忆</button
+        ><button data-page="automations">◷ 自动化</button
+        ><button data-page="files">▣ 工作目录</button
+        ><button data-page="connectors">⌘ 连接器</button
+        ><button data-page="office">▤ 文档产物</button>
+      </nav>
+      <div class="section-label">最近对话</div>
+      <div id="sessions"></div>
+      <div class="sidebar-bottom">
+        <button id="settings-open">⚙ 模型与工作目录</button
+        ><span id="connection" class="status">正在连接本地服务</span>
+      </div>
+    </aside>
+    <main>
+      <header>
+        <div>
+          <span class="eyebrow">YOUR PERSONAL WORKSPACE</span>
+          <h1 id="page-title">对话工作台</h1>
+        </div>
+        <div class="header-actions">
+          <span id="workspace-label">未选择工作目录</span
+          ><button id="settings-open-top">设置 ↗</button>
+        </div>
+      </header>
+      <section id="pending-approvals" aria-live="polite"></section>
+      <section id="chat-page" class="page">
+        <div id="messages" aria-live="polite"></div>
+        <div class="composer-wrap">
+          <div class="compose-options">
+            <select id="expert-select">
+              <option value="">通用助手</option></select
+            ><select id="mode">
+              <option value="craft">协作执行</option>
+              <option value="ask">只读问答</option>
+            </select>
+            <details id="skill-picker">
+              <summary>技能</summary>
+              <div id="skill-options"></div>
+            </details>
+            <span id="model-label">配置模型后开始</span>
+          </div>
+          <form id="chat-form">
+            <textarea
+              id="prompt"
+              placeholder="描述你想完成的工作，或提出一个问题…"
+              rows="3"
+              required
+            ></textarea>
+            <div class="composer-footer">
+              <small>文件写入与命令执行将请求你的确认</small
+              ><button type="button" id="cancel-chat" class="hidden">停止</button
+              ><button type="submit" id="send" class="primary">发送 ↑</button>
+            </div>
+          </form>
+          <p class="hint">Enter 发送 · Shift + Enter 换行 · 本地数据保存在这台电脑</p>
+        </div>
+      </section>
+      <section id="resource-page" class="page hidden">
+        <div class="panel-intro">
+          <h2 id="resource-title"></h2>
+          <p id="resource-description"></p>
+        </div>
+        <div id="resource-tabs"></div>
+        <div class="resource-grid">
+          <form id="resource-form" class="card">
+            <h3 id="form-title">添加</h3>
+            <label>名称<input id="resource-name" required placeholder="给它一个易懂的名字" /></label
+            ><label id="content-label"
+              >内容<textarea
+                id="resource-content"
+                rows="7"
+                required
+                placeholder="输入内容"
+              ></textarea>
+            </label>
+            <div id="automation-fields" class="hidden">
+              <label
+                >执行周期<select id="resource-schedule">
+                  <option value="manual">手动执行</option>
+                  <option value="hourly">每小时</option>
+                  <option value="daily">每天</option>
+                </select></label
+              ><label
+                >自定义间隔（分钟，可选）<input
+                  id="resource-interval"
+                  type="number"
+                  min="1"
+                  placeholder="留空使用上方周期" /></label
+              ><label class="check"
+                ><input id="resource-enabled" type="checkbox" /> 启用定时运行</label
+              >
+            </div>
+            <button class="primary" type="submit">保存</button
+            ><button type="button" id="cancel-edit" class="hidden">取消编辑</button>
+          </form>
+          <div id="resource-list"></div>
+        </div>
+        <div id="run-history"></div>
+      </section>
+      <section id="office-page" class="page hidden">
+        <div class="panel-intro">
+          <h2>让想法成为交付物</h2>
+          <p>生成可下载、可继续编辑的 Word、Excel 与 PowerPoint 文件。</p>
+        </div>
+        <form id="office-form" class="card office-card">
+          <label
+            >文件格式<select id="office-format">
+              <option value="docx">Word 文档</option>
+              <option value="xlsx">Excel 表格</option>
+              <option value="pptx">PowerPoint 演示</option>
+            </select></label
+          ><label>标题<input id="office-title" required placeholder="例如：本周项目进展" /></label
+          ><label
+            >正文<textarea
+              id="office-content"
+              rows="10"
+              required
+              placeholder="Word：每行一段；Excel：每行 CSV 数据；PPT：空行分隔页面，首行为页标题"
+            ></textarea></label
+          ><button class="primary">生成文件 ↗</button>
+          <div id="office-result"></div>
+        </form>
+        <div id="office-artifacts"></div>
+      </section>
+      <section id="connectors-page" class="page hidden">
+        <div class="panel-intro">
+          <h2>连接更多工具</h2>
+          <p>接入 MCP 工具服务，让伙伴访问你需要的能力。</p>
+        </div>
+        <div class="resource-grid">
+          <form id="connector-form" class="card">
+            <h3>添加连接器</h3>
+            <label>名称<input id="connector-name" required /></label
+            ><label
+              >连接方式<select id="connector-transport">
+                <option value="http">HTTP 服务</option>
+                <option value="stdio">本地程序 · stdio</option>
+              </select></label
+            >
+            <div id="connector-http">
+              <label
+                >服务地址<input
+                  id="connector-url"
+                  type="url"
+                  placeholder="http://127.0.0.1:3000/mcp" /></label
+              ><label
+                >API 密钥（可选）<input
+                  id="connector-key"
+                  type="password"
+                  autocomplete="new-password" /><small id="connector-key-state"></small
+              ></label>
+            </div>
+            <div id="connector-stdio" class="hidden">
+              <label
+                >程序路径或命令<input
+                  id="connector-command"
+                  placeholder="/绝对路径/program 或 node" /></label
+              ><label
+                >参数（每行一个）<textarea
+                  id="connector-args"
+                  rows="3"
+                  placeholder="/绝对路径/server.mjs"
+                ></textarea></label
+              ><label
+                >环境变量（JSON，可选）<textarea
+                  id="connector-env"
+                  rows="3"
+                  placeholder='{"EXAMPLE_KEY":"value"}'
+                ></textarea
+                ><small id="connector-env-state"></small
+              ></label>
+              <p class="muted">测试连接会启动这里配置的本地程序。请确认程序及参数可信。</p>
+            </div>
+            <button class="primary" type="submit">保存配置</button
+            ><button id="connector-cancel" type="button" class="hidden">取消编辑</button>
+            <p class="muted">保存配置不会启动程序。助手实际调用连接器工具时会请求你的确认。</p>
+          </form>
+          <div id="connector-list"></div>
+        </div>
+      </section>
+      <section id="files-page" class="page hidden">
+        <div class="panel-intro">
+          <h2>浏览你的工作资料</h2>
+          <p>这里使用设置中的当前工作目录。已有对话会继续使用它绑定的目录。</p>
+        </div>
+        <div class="file-toolbar">
+          <button id="files-parent">↑ 上级目录</button><code id="files-path">.</code
+          ><button id="files-refresh">刷新</button><button id="files-new">新建文本文件</button>
+        </div>
+        <div class="files-grid">
+          <div id="files-list" class="card"></div>
+          <div class="card file-preview">
+            <h3 id="file-title">选择一个文件</h3>
+            <p id="file-info" class="muted">点击目录继续浏览，或打开文本与 Office 文件。</p>
+            <textarea id="file-editor" class="hidden" rows="18" spellcheck="false"></textarea>
+            <div id="file-office"></div>
+            <button id="file-save" class="primary hidden">保存修改</button>
+          </div>
+        </div>
+      </section>
+    </main>
+    <div id="settings" class="drawer-backdrop hidden">
+      <section class="drawer">
+        <div class="drawer-head">
+          <h2>连接你的工作方式</h2>
+          <button id="settings-close" aria-label="关闭">✕</button>
+        </div>
+        <p class="muted">接入兼容 OpenAI 的模型服务，选择助手可以访问的本地工作目录。</p>
+        <form id="settings-form">
+          <label class="check"
+            ><input id="supports-tools" type="checkbox" checked /> 模型支持工具调用</label
+          >
+          <p class="muted">关闭后仅进行文本对话，适合不支持工具协议的模型。</p>
+          <label
+            >服务地址<input
+              id="base-url"
+              type="url"
+              placeholder="https://api.openai.com/v1"
+              required /></label
+          ><label>模型名称<input id="model" placeholder="模型 ID" required /></label
+          ><label
+            >API 密钥<input
+              id="api-key"
+              type="password"
+              autocomplete="new-password"
+              placeholder="输入密钥" /><small id="key-state"></small></label
+          ><label
+            >工作目录<input id="workspace" placeholder="/Users/你的用户名/Documents/项目" /><small
+              >填写本机绝对路径。助手的文件操作限制在此目录。</small
+            ></label
+          ><button class="primary" type="submit">保存设置</button
+          ><button id="model-test" type="button">测试模型连接</button>
+          <p class="muted">先保存接口设置再测试。测试仅发送固定问候，不发送历史消息或本地文件。</p>
+          <p id="settings-feedback"></p>
+        </form>
+      </section>
+    </div>
+    <div id="toast" role="status" class="hidden"></div>
+    <dialog id="action-dialog" aria-labelledby="action-title">
+      <form id="action-dialog-form">
+        <h2 id="action-title">确认操作</h2>
+        <p id="action-description"></p>
+        <label id="action-input-label" class="hidden"
+          >文件名<input id="action-input" autocomplete="off"
+        /></label>
+        <div class="dialog-actions">
+          <button id="action-cancel" type="button">取消</button
+          ><button id="action-confirm" type="submit" class="primary">确认</button>
+        </div>
+      </form>
+    </dialog>
+    <script src="/app.js"></script>
+  </body>
+</html>

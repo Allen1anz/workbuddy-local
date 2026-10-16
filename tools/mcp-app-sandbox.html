@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>MCP Apps Sandbox Proxy</title>
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+    #app { display: block; width: 100%; height: 100%; border: 0; }
+  </style>
+</head>
+<body>
+<script>
+(function () {
+  'use strict';
+
+  var PROXY_READY = 'ui/notifications/sandbox-proxy-ready';
+  var RESOURCE_READY = 'ui/notifications/sandbox-resource-ready';
+  var hostWindow = window.parent;
+  var innerFrame = null;
+  var innerWindow = null;
+
+  function isSandboxControl(method) {
+    return typeof method === 'string'
+      && method.indexOf('ui/notifications/sandbox-') === 0;
+  }
+
+  function permissionAllow(permissions) {
+    // 默认下放 clipboard-write：Ardot 等 App 的「复制链接」走
+    // navigator.clipboard.writeText；仅靠 App 声明时，未声明的资源在
+    // Chromium 双层 iframe 下会被 Permissions-Policy 直接拦截。
+    var values = ['clipboard-write'];
+    if (permissions && typeof permissions === 'object') {
+      if (permissions.camera) values.push('camera');
+      if (permissions.microphone) values.push('microphone');
+      if (permissions.geolocation) values.push('geolocation');
+    }
+    return values.join('; ');
+  }
+
+  function escapeAttribute(value) {
+    return String(value).replace(/"/g, '&quot;');
+  }
+
+  function buildCspMeta(csp) {
+    if (!csp || typeof csp !== 'object') return '';
+    var connect = Array.isArray(csp.connectDomains)
+      ? csp.connectDomains.join(' ')
+      : '';
+    var resource = Array.isArray(csp.resourceDomains)
+      ? csp.resourceDomains.join(' ')
+      : '';
+    var frames = Array.isArray(csp.frameDomains)
+      ? csp.frameDomains.join(' ')
+      : '';
+    var base = Array.isArray(csp.baseUriDomains)
+      ? csp.baseUriDomains.join(' ')
+      : '';
+    var directives = [
+      "default-src 'none'",
+      "script-src 'unsafe-inline' 'unsafe-eval' blob: " + resource,
+      "style-src 'unsafe-inline' " + resource,
+      "img-src data: blob: " + resource,
+      "font-src data: blob: " + resource,
+      "media-src data: blob: " + resource,
+      "connect-src " + connect,
+      frames ? "frame-src " + frames : "frame-src 'none'",
+      base ? "base-uri " + base : "base-uri 'none'",
+      "object-src 'none'"
+    ];
+    return '<meta http-equiv="Content-Security-Policy" content="'
+      + escapeAttribute(directives.join('; '))
+      + '">';
+  }
+
+  function injectMeta(html, meta) {
+    if (!meta) return html;
+    if (/<head[^>]*>/i.test(html)) {
+      return html.replace(/<head([^>]*)>/i, '<head$1>' + meta);
+    }
+    if (/<html[^>]*>/i.test(html)) {
+      return html.replace(
+        /<html([^>]*)>/i,
+        '<html$1><head>' + meta + '</head>'
+      );
+    }
+    return meta + html;
+  }
+
+  function loadResource(params) {
+    if (innerFrame) innerFrame.remove();
+
+    innerFrame = document.createElement('iframe');
+    innerFrame.id = 'app';
+    innerFrame.setAttribute(
+      'sandbox',
+      params.sandbox || 'allow-scripts allow-same-origin allow-forms'
+    );
+    innerFrame.setAttribute('allow', permissionAllow(params.permissions));
+    innerFrame.style.width = '100%';
+    innerFrame.style.height = '100%';
+    innerFrame.style.border = '0';
+
+    var html = typeof params.html === 'string' ? params.html : '';
+    var doc = injectMeta(html, buildCspMeta(params.csp));
+    // 必须先 append 到 DOM，contentDocument 才可用。
+    document.body.appendChild(innerFrame);
+    innerWindow = innerFrame.contentWindow;
+    // 用 document.write 而非 srcdoc 载入 View HTML：srcdoc 内层文档是 opaque
+    // origin，会让依赖 blob: worker / WebGL / canvas 的 App（Ardot neeko 画布、
+    // CesiumJS 等）无法初始化，表现为 iframe 全绿但内容空白。document.write 让
+    // 内层继承本代理真实源（http://127.0.0.1:port），worker/canvas 正常。
+    // 对齐官方 ext-apps basic-host sandbox 参考实现（allow-same-origin 保证
+    // 内层 about:blank 与代理同源，contentDocument 可写）。
+    var innerDoc = innerFrame.contentDocument
+      || (innerWindow && innerWindow.document);
+    if (innerDoc) {
+      innerDoc.open();
+      innerDoc.write(doc);
+      innerDoc.close();
+    } else {
+      // 兜底：拿不到 contentDocument 时退回 srcdoc。
+      innerFrame.srcdoc = doc;
+    }
+  }
+
+  window.addEventListener('message', function (event) {
+    var data = event.data;
+    var method = data && data.method;
+
+    if (event.source === hostWindow) {
+      if (method === RESOURCE_READY) {
+        loadResource(data.params || {});
+      } else if (!isSandboxControl(method) && innerWindow) {
+        innerWindow.postMessage(data, '*');
+      }
+      return;
+    }
+
+    if (innerWindow && event.source === innerWindow && !isSandboxControl(method)) {
+      hostWindow.postMessage(data, '*');
+    }
+  });
+
+  hostWindow.postMessage({
+    jsonrpc: '2.0',
+    method: PROXY_READY,
+    params: {}
+  }, '*');
+})();
+</script>
+</body>
+</html>
