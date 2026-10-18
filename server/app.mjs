@@ -77,6 +77,7 @@ export function createAppServer({
   staticFallback = false,
   extraTools = [],
   extraRoutes,
+  initialSkills = [],
 } = {}) {
   if (!dataDir) throw Error("dataDir required");
   mkdirSync(dataDir, { recursive: true, mode: 0o700 });
@@ -130,6 +131,9 @@ export function createAppServer({
     db.prepare("INSERT OR REPLACE INTO entities VALUES(?,?,?)").run(k, o.id, JSON.stringify(o));
     return o;
   };
+  for (const skill of initialSkills) {
+    if (!get("skills", skill.id)) put("skills", { ...skill, createdAt: now(), updatedAt: now() });
+  }
   const messages = (id) =>
     db.prepare("SELECT * FROM messages WHERE session_id=? ORDER BY rowid").all(id).map(message => {
       const media = get("messageMedia", message.id)?.media;

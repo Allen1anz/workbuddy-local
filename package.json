@@ -1,14 +1,15 @@
 {
   "name": "workbuddy-local",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Independent local agent workspace, desktop host and DSH adapter",
   "type": "module",
   "scripts": {
     "start": "node start.mjs",
     "test": "node scripts/test-public.mjs",
-    "desktop": "electron desktop/main.cjs",
-    "test:all": "node --test server/*.test.mjs tools/*.test.mjs desktop/*.test.cjs desktop/*.test.mjs"
+    "desktop": "electron desktop/public-main.cjs",
+    "test:all": "node --test server/*.test.mjs tools/*.test.mjs desktop/*.test.cjs desktop/*.test.mjs",
+    "package:mac": "node desktop/package-macos.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/client": "2.3.1"

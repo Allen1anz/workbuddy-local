@@ -14,6 +14,16 @@ WorkBuddy Local 就围绕这些环节构建。项目从 WorkBuddy 的客户端�
 
 [快速运行](#快速启动) · [产品能力](#从请求到交付工作如何发生) · [架构](#产品层与运行时各司其职) · [当前进度](#当前进度与边界)
 
+## 下载安装（Apple Silicon Mac）
+
+从 [Releases](https://github.com/Allen1anz/workbuddy-local/releases) 下载 `WorkBuddy-Local-Open-0.2.0-macOS-arm64.dmg`，打开后将 **WorkBuddy Local Open.app** 拖到 Applications。
+
+需要 macOS 14+、Apple Silicon，建议至少 8 GB 内存。安装包包含 Electron、Node、Python 和 Ollama，无需安装开发工具。当前为临时签名的测试版，**未通过 Apple 公证**，首次打开可能被 macOS 拦截；它不具备已公证发行版的无提示安装体验。
+
+首次进入设置，可点击「下载或启动本地模型」，下载 Qwen3 1.7B（约 1.4 GB），完成后点击「使用此模型」。也可以填写自己的 OpenAI 兼容接口。模型下载需要联网；推理在本机进行。默认单实例、8192 上下文，每次回答后卸载模型，退出应用停止私有模型服务。
+
+开源安装版使用独立数据目录 `~/Library/Application Support/WorkBuddy Local Open/data`，默认工作目录 `~/WorkBuddy Local Open`，不会覆盖本机复刻版。模型文件保存在这个独立数据目录内。安装版包含两个带 Apache 2.0 许可证的管理技能；其他未确认分发授权的原版资源仍不打包。
+
 ## 逆向了什么，重新实现了什么
 
 项目以 WorkBuddy 5.3.14 为最初研究基线，保留旧版成果，再核对 5.8.3 的差异。研究覆盖客户端资源结构、renderer 与桌面宿主的通信契约，以及会话、设置、专家、技能和工具审批等产品流程。
@@ -91,15 +101,15 @@ DSH 接入复用已有运行时，通过命名 profile 和外部适配插件连�
 
 ## 当前进度与边界
 
-这是 **0.1.0 开发预览版**。公开源码版测试结果为 **249 项通过、0 项失败、9 项跳过**；另在本机完成过真实 Qwen 模型、DSH 对话、审批写文件及技能创建/调用验收。跳过项与验证范围见 [发布说明](docs/PUBLISHING.md)。
+这是 **0.2.0 开发预览版**。公开源码版测试结果为 **251 项通过、0 项失败、9 项跳过**；另在本机完成过真实 Qwen 模型、DSH 对话、审批写文件及技能创建/调用验收。跳过项与验证范围见 [发布说明](docs/PUBLISHING.md)。
 
-专家团执行、完整专家流程的 DSH 验收、WorkBuddy 5.8.3 全量适配及跨平台打包仍待完成。腾讯账号、微信绑定和官方云市场未接入。
+专家团执行、完整专家流程的 DSH 验收、WorkBuddy 5.8.3 全量适配、Windows/Intel Mac 打包和 Apple 公证仍待完成。腾讯账号、微信绑定和官方云市场未接入。
 
-本项目为独立实现，与腾讯无隶属或背书关系。公开版默认使用独立网页 UI；原版 renderer、字体、图标、内置专家与技能、安装包及反编译产物均不随仓库分发，不能将此仓库理解为原版客户端的完整开源副本。
+本项目为独立实现，与腾讯无隶属或背书关系。公开桌面版使用独立界面，内置两个带 Apache 2.0 许可证的管理技能。原版 renderer、字体、图标及其他未确认分发授权的资源不随仓库分发，不能将此仓库理解为原版客户端的完整开源副本。
 
 ## 快速启动
 
-需要 Node.js 24.11+ 和 Python 3。
+以下是源码开发方式。需要 Node.js 24.11+ 和 Python 3；下载安装包的用户不需要执行这些命令。
 
 ```bash
 git clone https://github.com/Allen1anz/workbuddy-local.git
@@ -118,7 +128,7 @@ npm start
 {"enabled":true,"repository":"/absolute/path/to/dsh"}
 ```
 
-网页数据目录默认为 `.data`；桌面默认在 `~/Library/Application Support/WorkBuddy Local/data`。新会话使用 DSH；已有旧引擎会话继续保留。适配器通过 `sdk-minimal` 命名 profile 启动，不修改 DSH 核心。
+网页数据目录默认为 `.data`；开源桌面版在 `~/Library/Application Support/WorkBuddy Local Open/data`。新会话使用 DSH；已有旧引擎会话继续保留。适配器通过 `sdk-minimal` 命名 profile 启动，不修改 DSH 核心。安装包尚未内置外部 DSH 仓库。
 
 ## 桌面开发
 
@@ -127,7 +137,7 @@ npm install --no-save --package-lock=false electron@37.10.3
 npm run desktop
 ```
 
-桌面默认使用公开网页界面。兼容桥和旧 renderer 专用的独立设置窗口需要另行提供有权使用的资源；仓库不提供这些资源，也不提供包含它们的二进制下载。`desktop/build.mjs` 是 macOS 本地打包工具，需要按源码中的目录安装 Electron runtime，未作为跨平台发布流程验收。
+`desktop/public-main.cjs` 是独立桌面宿主；旧 renderer 的兼容宿主仍保留在 `desktop/main.cjs`。`desktop/package-macos.mjs` 负责 Apple Silicon 打包，运行时来源和校验值见 `desktop/runtime-manifest.json`；构建说明见 `docs/PUBLISHING.md`。暂未提供 Windows、Intel Mac 安装包。
 
 ## 测试与发布
 

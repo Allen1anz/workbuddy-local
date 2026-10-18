@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 - 2026-10-18
+
+- Add a standalone macOS arm64 desktop host, DMG/ZIP packaging and isolated product data.
+- Bundle Node, Python and Ollama; add first-launch local model download, progress, cancellation and selection.
+- Limit the private model service to a single loaded model and unload after each answer.
+- Include two Apache-2.0 management skills without overwriting installed user edits.
+- Preserve original compatibility code and external DSH integration. Original UI parity, expert-team execution and Apple notarization remain incomplete.
+
 ## 0.1.0 - 2026-10-16
 
 - Publish independent local workspace, desktop host, compatibility adapters and tests.

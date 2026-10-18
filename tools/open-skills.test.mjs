@@ -1,0 +1,22 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { installOpenSkills } from "./open-skills.mjs";
+import { createWorkspaceServer } from "../workspace.mjs";
+test("licensed skills install once, register in the product and preserve user edits on restart", async t => {
+  const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), "wb-open-skills-"));
+  const skills = await installOpenSkills(dataDir);
+  assert.equal(skills.length, 2);
+  for (const skill of skills) assert.match(await fs.readFile(path.join(skill.localRootDir, "LICENSE.txt"), "utf8"), /Apache License/);
+  await fs.writeFile(path.join(skills[0].localRootDir, "SKILL.md"), "User edited instructions");
+  assert.equal((await installOpenSkills(dataDir))[0].content, "User edited instructions");
+  const server = createWorkspaceServer({ dataDir, initialSkills: await installOpenSkills(dataDir) });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const url = "http://127.0.0.1:" + server.address().port + "/api/skills";
+  const installed = await (await fetch(url)).json();
+  assert.equal(installed.length, 2);
+  assert.equal(installed.find(skill => skill.name === "skill-creator").content, "User edited instructions");
+});

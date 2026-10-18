@@ -183,6 +183,7 @@ function configDisplay() {
 function showSettings() {
   configDisplay();
   $("settings").classList.remove("hidden");
+  refreshLocalModel().catch(error => { $("local-model-status").textContent = error.message; });
 }
 $("settings-open").onclick = showSettings;
 $("settings-open-top").onclick = showSettings;
@@ -208,6 +209,48 @@ $("settings-form").onsubmit = async (e) => {
     $("settings-feedback").textContent = err.message;
   }
 };
+let localModelTimer, localModelState;
+async function refreshLocalModel() {
+  clearTimeout(localModelTimer);
+  localModelState = await api("/local-model/status");
+  const value = localModelState;
+  $("local-model-status").textContent = value.available
+    ? value.message + (value.status === "downloading" ? " · " + value.progress + "%" : "") + (value.error ? "：" + value.error : "")
+    : "网页开发模式未打包本地运行器；请下载 Mac 安装版，或填写下方模型接口。";
+  $("local-model-download").disabled = !value.available || ["starting", "downloading"].includes(value.status);
+  $("local-model-use").disabled = value.status !== "ready";
+  $("local-model-stop").disabled = !value.available || value.status === "stopped";
+  $("local-model-progress").classList.toggle("hidden", value.status !== "downloading");
+  $("local-model-progress").value = value.progress;
+  if (!$("settings").classList.contains("hidden") || ["starting", "downloading"].includes(value.status))
+    localModelTimer = setTimeout(() => refreshLocalModel().catch(error => { $("local-model-status").textContent = error.message; }), 1000);
+}
+$("local-model-download").onclick = async () => {
+  $("local-model-download").disabled = true;
+  $("local-model-status").textContent = "正在准备本地模型…";
+  try { await api("/local-model/download", { method: "POST" }); await refreshLocalModel(); }
+  catch (error) { $("local-model-status").textContent = error.message; $("local-model-download").disabled = false; }
+};
+$("local-model-use").onclick = async () => {
+  try {
+    const status = await api("/local-model/status");
+    if (status.status !== "ready") throw Error("请等待模型下载完成");
+    state.config = await api("/config", { method: "PUT", ...payload({ baseURL: status.baseURL, model: status.model, apiKey: "", supportsTools: true }) });
+    configDisplay(); $("settings-feedback").textContent = "本地模型已选中，可以开始对话。";
+    toast("已使用本地模型");
+  } catch (error) { $("settings-feedback").textContent = error.message; }
+};
+$("local-model-stop").onclick = async () => {
+  try { await api("/local-model/stop", { method: "POST" }); await refreshLocalModel(); }
+  catch (error) { $("local-model-status").textContent = error.message; }
+};
+if (window.publicDesktop) {
+  $("workspace-choose").classList.remove("hidden");
+  $("workspace-choose").onclick = async () => {
+    try { const selected = await window.publicDesktop.selectWorkspace(); if (selected) $("workspace").value = selected; }
+    catch (error) { $("settings-feedback").textContent = error.message; }
+  };
+}
 $("new-chat").onclick = () => newSession().catch((e) => toast(e.message));
 $("prompt").onkeydown = (e) => {
   if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
@@ -581,6 +624,7 @@ async function init() {
     await refreshSessions();
     await loadExperts();
     await loadSkills();
+    if (!state.config.model) showSettings();
   } catch (err) {
     $("connection").textContent = "本地服务连接失败";
     toast(err.message);

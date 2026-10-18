@@ -225,6 +225,15 @@
         </div>
         <p class="muted">接入兼容 OpenAI 的模型服务，选择助手可以访问的本地工作目录。</p>
         <form id="settings-form">
+          <section class="card" id="local-model-setup">
+            <h3>本地模型 · 无需密钥</h3>
+            <p>Qwen3 1.7B（Apache 2.0），首次下载约 1.4 GB。建议至少 8 GB 内存；模型每次回答后卸载，运行环境随 Mac 安装包提供。</p>
+            <p id="local-model-status" role="status">正在检查本地运行环境…</p>
+            <progress id="local-model-progress" max="100" value="0" class="hidden"></progress>
+            <div><button id="local-model-download" type="button">下载或启动本地模型</button>
+              <button id="local-model-use" type="button" disabled>使用此模型</button>
+              <button id="local-model-stop" type="button">取消下载 / 停止服务</button></div>
+          </section>
           <label class="check"
             ><input id="supports-tools" type="checkbox" checked /> 模型支持工具调用</label
           >
@@ -243,7 +252,7 @@
               autocomplete="new-password"
               placeholder="输入密钥" /><small id="key-state"></small></label
           ><label
-            >工作目录<input id="workspace" placeholder="/Users/你的用户名/Documents/项目" /><small
+            >工作目录<input id="workspace" placeholder="/Users/你的用户名/Documents/项目" /><button id="workspace-choose" type="button" class="hidden">选择文件夹</button><small
               >填写本机绝对路径。助手的文件操作限制在此目录。</small
             ></label
           ><button class="primary" type="submit">保存设置</button
