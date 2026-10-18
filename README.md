@@ -4,6 +4,22 @@
 
 **这是一个基于 WorkBuddy 客户端逆向分析与交互复刻构建的产品项目。我们研究它的界面、桌面通信和业务流程，独立实现本地宿主与后端，再接入自选模型和 DSH 运行时，让复刻出来的产品能够实际工作。**
 
+## 源码与安装包
+
+**同一个项目，同时提供开源源码和可直接安装的桌面应用。当前发布版本：v0.2.0（开发预览版）。**
+
+| 获取内容 | 直接入口 |
+| --- | --- |
+| 浏览项目源码 | [全部公开源码](https://github.com/Allen1anz/workbuddy-local/tree/main) |
+| 下载与安装包对应的 v0.2.0 源码 | [源码 ZIP](https://github.com/Allen1anz/workbuddy-local/archive/refs/tags/v0.2.0.zip) · [源码 tar.gz](https://github.com/Allen1anz/workbuddy-local/archive/refs/tags/v0.2.0.tar.gz) |
+| Mac 安装包（Apple Silicon，macOS 14+） | [下载 DMG 安装包](https://github.com/Allen1anz/workbuddy-local/releases/download/v0.2.0/WorkBuddy-Local-Open-0.2.0-macOS-arm64.dmg) |
+| Mac 应用压缩包（同一版本） | [下载应用 ZIP](https://github.com/Allen1anz/workbuddy-local/releases/download/v0.2.0/WorkBuddy-Local-Open-0.2.0-macOS-arm64.zip) |
+| 发布说明与文件校验 | [v0.2.0 发布页](https://github.com/Allen1anz/workbuddy-local/releases/tag/v0.2.0) · [SHA256SUMS.txt](https://github.com/Allen1anz/workbuddy-local/releases/download/v0.2.0/SHA256SUMS.txt) |
+
+普通用户下载 DMG，打开后将应用拖到 Applications；开发者下载源码或克隆本仓库。发布页的 Assets 同时提供安装文件和 GitHub 自动生成的 `Source code` 源码包，两者对应同一个 `v0.2.0` 标签。Windows、Intel Mac 安装包尚未发布。
+
+公开源码涵盖独立网页 UI、桌面宿主与兼容桥、本地后端、设置/专家/技能管理、工具与 DSH 适配、测试、打包及发布流程，以及两个带 Apache 2.0 许可证的管理技能。DSH 框架作为外部依赖另行接入；原版界面资源不在公开源码及安装包内。模型可在应用内下载，个人数据和密钥保留在用户本机。
+
 ![WorkBuddy 逆向产品：本机复刻版主界面](docs/screenshots/local-workbuddy-home.png)
 
 *本机复刻版实拍：WorkBuddy 标题、左侧导航、新建任务、场景切换和消息输入区。基于 5.3.14 界面资源展示；公开源码默认网页 UI 与此不同。*
