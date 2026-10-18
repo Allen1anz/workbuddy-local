@@ -6,6 +6,8 @@ The Apple Silicon macOS desktop installer contains Electron 37.10.3, Node 24.19.
 
 Public suite: 260 tests, **251 passed, 0 failed, 9 skipped**. New tests cover isolated local-model launch policy, explicitly requested model pulls, incomplete-download failure, cancellation, licensed skill registration and preservation of user edits.
 
+On a clean CI machine without the separately installed REA checkout, one additional stdio integration test is explicitly skipped: expected totals are 250 passed, 0 failed and 10 skipped. HTTP/SSE MCP protocol, approval and credential-redaction tests continue to run. The initial CI run exposed this missing external-test guard; it was corrected without changing product behavior.
+
 Real integration: the private bundled Ollama runtime downloaded Qwen3 1.7B from its upstream registry and answered a product chat with `本地模型安装验收通过。`. Native desktop first launch exposed the settings page, licensed skills, default workspace, actual model-download progress and successful cancellation. This is actual model inference, separate from scripted protocol tests.
 
 The final DMG was checksum-verified, mounted read-only, copied into an isolated installation directory and launched there with the same isolated test profile. The stored local-model selection restored to a new private endpoint after restart; a new product chat replied `重启成功。`. Word, Excel and PowerPoint generation used the bundled Python. The private model API reported zero loaded models after the answer. Normal desktop exit was also checked to close the backend listener and terminate its model process.

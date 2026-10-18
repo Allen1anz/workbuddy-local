@@ -23,6 +23,7 @@ jobs:
         with:
           node-version: 24.19.0
       - name: Install and test
+        # Optional integrations report skips when their external checkout is absent.
         run: npm ci && npm test
       - name: Download verified runtimes
         run: node scripts/prepare-release-runtimes.mjs

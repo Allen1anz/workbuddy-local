@@ -5,10 +5,12 @@ import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { existsSync } from "node:fs";
 import { mcpExtension } from "./mcp.mjs";
 import { createAppServer } from "../server/app.mjs";
 
-test("MCP stdio connects to installed REA, lists tools, calls target-free session and hides secrets", async () => {
+const reaDispatcher = resolve(dirname(fileURLToPath(import.meta.url)), "../../rea-local/scripts/rea.mjs");
+test("MCP stdio connects to installed REA, lists tools, calls target-free session and hides secrets", { skip: existsSync(reaDispatcher) ? false : "External REA checkout is not bundled" }, async () => {
   const dir = await mkdtemp(join(tmpdir(), "wb-mcp-"));
   const extension = mcpExtension(dir);
   const app = createAppServer({
@@ -28,15 +30,11 @@ test("MCP stdio connects to installed REA, lists tools, calls target-free sessio
     return response.json();
   };
   try {
-    const dispatcher = resolve(
-      dirname(fileURLToPath(import.meta.url)),
-      "../../rea-local/scripts/rea.mjs",
-    );
     const server = await request("/api/connectors", "POST", {
       name: "REA protocol verification",
       transport: "stdio",
       command: process.execPath,
-      args: [dispatcher, "mcp"],
+      args: [reaDispatcher, "mcp"],
       env: { WB_TEST_KEY: "private-value" },
     });
     assert.deepEqual(server.envKeys, ["WB_TEST_KEY"]);
