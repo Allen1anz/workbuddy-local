@@ -14,6 +14,8 @@ The desktop host uses a separate bundle identifier, data directory and port from
 
 ## Build the Mac installer
 
+The repository workflow `.github/workflows/release-macos.yml` performs the pinned runtime download, source tests, packaging and packaged-runtime smoke test on a standard macOS arm64 runner, then publishes a prerelease with DMG/ZIP/checksums. It runs when the package version or release workflow changes, or by manual dispatch. It refuses to replace an already existing release tag. Exact embedded Node hashes are recorded inside each app at `Contents/Resources/runtime/runtime-manifest.json`.
+
 1. Run `npm ci` with Node 24.11+.
 2. Install the pinned Electron runtime under `desktop/runtime`, or set `WORKBUDDY_ELECTRON_DIST` to its `dist` directory. Verify it against `desktop/runtime-manifest.json`.
 3. Download the pinned Ollama and Python archives listed in `desktop/runtime-manifest.json`, verify their SHA256 values, and extract them under `.release-cache/ollama` and `.release-cache/python`. Retain all bundled license/notice files. Place the Ollama project's MIT license at `.release-cache/OLLAMA-LICENSE`, and retain Python/dependency notices under `.release-cache/python/share/runtime-licenses` from the exact upstream release tag.

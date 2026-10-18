@@ -26,6 +26,9 @@ await fs.writeFile(path.join(appRoot, "package.json"), JSON.stringify({ name: "w
 await fs.mkdir(path.join(resources, "runtime"), { recursive: true });
 await fs.copyFile(process.env.WORKBUDDY_NODE || process.execPath, path.join(resources, "runtime/node"));
 await fs.chmod(path.join(resources, "runtime/node"), 0o755);
+const runtimeManifest = JSON.parse(await fs.readFile(path.join(root, "desktop/runtime-manifest.json"), "utf8"));
+runtimeManifest.node = { version: run(process.env.WORKBUDDY_NODE || process.execPath, ["--version"]).trim(), binarySHA256: createHash("sha256").update(await fs.readFile(path.join(resources, "runtime/node"))).digest("hex"), source: "Node runtime embedded by this build" };
+await fs.writeFile(path.join(resources, "runtime/runtime-manifest.json"), JSON.stringify(runtimeManifest, null, 2));
 await fs.cp(ollama, path.join(resources, "runtime/ollama"), { recursive: true, verbatimSymlinks: true });
 await fs.copyFile(path.join(root, ".release-cache/OLLAMA-LICENSE"), path.join(resources, "runtime/ollama/LICENSE"));
 await fs.cp(python, path.join(resources, "runtime/python"), { recursive: true, verbatimSymlinks: true });

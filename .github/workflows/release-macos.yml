@@ -1,0 +1,48 @@
+name: Build and publish Mac installer
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - package.json
+      - .github/workflows/release-macos.yml
+permissions:
+  contents: write
+concurrency:
+  group: mac-installer-release
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.19.0
+      - name: Install and test
+        run: npm ci && npm test
+      - name: Download verified runtimes
+        run: node scripts/prepare-release-runtimes.mjs
+      - name: Build signed test installer
+        env:
+          WORKBUDDY_ELECTRON_DIST: ${{ github.workspace }}/.release-cache/electron
+        run: npm run package:mac
+      - name: Smoke test packaged runtimes
+        run: node scripts/smoke-installer.mjs
+      - name: Publish preview release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          gh release create "v$VERSION" \
+            --target "$GITHUB_SHA" \
+            --title "$VERSION · macOS Apple Silicon 安装测试版" \
+            --notes-file docs/RELEASE-0.2.0.md \
+            --prerelease \
+            "release-artifacts/$VERSION/WorkBuddy-Local-Open-$VERSION-macOS-arm64.dmg" \
+            "release-artifacts/$VERSION/WorkBuddy-Local-Open-$VERSION-macOS-arm64.zip" \
+            "release-artifacts/$VERSION/SHA256SUMS.txt"
